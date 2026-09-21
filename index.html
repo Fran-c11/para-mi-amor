@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Para ti 🌻</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0; height: 100%; background: #000; overflow: hidden;
+    touch-action: none; -webkit-tap-highlight-color: transparent;
+    font-family: 'Quicksand', system-ui, sans-serif;
+  }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* Pantalla de inicio */
+  #inicio {
+    position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; padding: 24px;
+    text-align: center; cursor: pointer; color: #ffe27a;
+    background: radial-gradient(ellipse at center, rgba(70,58,0,.5), rgba(0,0,0,.72) 70%);
+    transition: opacity 1.4s ease;
+  }
+  #inicio.oculto { opacity: 0; pointer-events: none; }
+  #inicioTitulo { font-family: 'Dancing Script', cursive; font-size: clamp(2.6rem, 11vw, 4.4rem); font-weight: 700; text-shadow: 0 0 24px rgba(255,210,60,.7); }
+  #inicioTexto { font-size: 1rem; letter-spacing: .04em; opacity: .85; animation: latido 2s ease-in-out infinite; }
+  @keyframes latido { 50% { opacity: .35; } }
+
+  /* Pista */
+  #pista {
+    position: fixed; left: 0; right: 0; bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    text-align: center; color: #ffe9a0; font-weight: 700; font-size: .92rem; padding: 0 16px;
+    text-shadow: 0 0 10px rgba(255,210,60,.8); opacity: 0; transition: opacity 1.2s; pointer-events: none; z-index: 3;
+  }
+  #pista.visible { opacity: .9; }
+
+  /* Botón de música */
+  #musica {
+    position: fixed; z-index: 6; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px;
+    width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(255,214,70,.55);
+    background: rgba(30,24,0,.55); color: #ffe27a; font-size: 1.35rem; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px);
+    box-shadow: 0 0 16px rgba(255,205,60,.35); opacity: 0; pointer-events: none; transition: opacity 1s ease;
+  }
+  #musica.visible { opacity: 1; pointer-events: auto; }
+  #musica[hidden] { display: none; }
+  #musica.sonando { animation: pulso 2.4s ease-in-out infinite; }
+  #musica:not(.sonando)::after {
+    content: ""; position: absolute; width: 60%; height: 2px; background: #ffe27a; transform: rotate(-45deg); border-radius: 2px;
+  }
+  #musica:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  @keyframes pulso { 50% { box-shadow: 0 0 26px rgba(255,205,60,.75); } }
+
+  /* Cartita */
+  #carta {
+    position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box;
+    background: rgba(0,0,0,.6); opacity: 0; pointer-events: none; transition: opacity .35s ease;
+  }
+  #carta.abierta { opacity: 1; pointer-events: auto; }
+  .papel {
+    width: min(84vw, 340px); max-height: 82vh; overflow-y: auto; box-sizing: border-box; padding: 12px; border-radius: 16px;
+    background: radial-gradient(circle at 18% 12%, #fee796, #f4b935 58%, #e2a11c);
+    box-shadow: 0 0 46px rgba(255,205,60,.35), 0 12px 32px rgba(0,0,0,.65);
+    transform: scale(.86) translateY(16px); transition: transform .45s cubic-bezier(.2,.9,.3,1.15);
+  }
+  #carta.abierta .papel { transform: none; }
+  .interior {
+    border-radius: 10px; padding: 20px 18px 16px; text-align: center; color: #4a3210;
+    background: radial-gradient(circle at 80% 8%, #fffdf2, #fff5d2 70%);
+    border: 1px solid rgba(160,110,20,.35);
+  }
+  .interior h2 { font-family: 'Dancing Script', cursive; font-size: 2.2rem; line-height: 1.1; margin: 0 0 8px; color: #7a5410; }
+  .interior p { font-size: .9rem; line-height: 1.55; margin: 0 0 10px; }
+  #cCierre { font-family: 'Dancing Script', cursive; font-weight: 700; font-size: 1.9rem; color: #a4661a; margin-bottom: 4px; }
+  #cArte { width: 150px; height: auto; display: block; margin: 0 auto 6px; }
+  #cPara { display: inline-block; background: #fff; border: 1px solid #e0b040; border-radius: 6px; padding: 2px 16px; font-weight: 700; font-size: .82rem; color: #6b4a10; }
+  #cCerrar {
+    background: #ffc928; color: #5a3a00; border: 0; border-radius: 999px; padding: 10px 30px;
+    font: 700 .95rem 'Quicksand', system-ui, sans-serif; cursor: pointer; box-shadow: 0 0 18px rgba(255,201,40,.5);
+  }
+  #cCerrar:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    #inicio, #carta, .papel, #pista, #musica { transition-duration: .01s; }
+    #inicioTexto, #musica.sonando { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="inicio" role="button" tabindex="0">
+  <div id="inicioTitulo"></div>
+  <div id="inicioTexto"></div>
+</div>
+
+<button id="musica" type="button" aria-label="Activar o pausar la música" aria-pressed="false" hidden>♪</button>
+
+<div id="pista"></div>
+
+<div id="carta" role="dialog" aria-modal="true" aria-labelledby="cTitulo">
+  <div class="papel">
+    <div class="interior">
+      <h2 id="cTitulo"></h2>
+      <p id="cTexto"></p>
+      <div id="cCierre"></div>
+      <canvas id="cArte" width="240" height="280" aria-hidden="true"></canvas>
+      <div id="cPara"></div>
+    </div>
+  </div>
+  <button id="cCerrar" type="button">Cerrar</button>
+</div>
+
+<script>
+/* ==========================================================
+   ✏️  EDITA AQUÍ  ✏️
+   Cambia los textos entre comillas y guarda el archivo.
+   ========================================================== */
+const CONFIG = {
+  // Pantalla inicial
+  inicioTitulo: "Melo 💛",
+  inicioTexto: "Toca para comenzar",
+  pista: "Toca un ramo 💛 · Arrastra para girar",
+
+  // 🎵 MÚSICA
+  // 1) Copia tu canción (formato .mp3) en la misma carpeta que index.html
+  // 2) Escribe aquí su nombre exacto, por ejemplo:  musica: "cancion.mp3"
+  // Si lo dejas vacío, el botón de música no aparece.
+  musica: "",
+  musicaVolumen: 0.7,   // de 0 (silencio) a 1 (máximo)
+
+  // Frases que aparecen debajo de los ramos
+  frases: [
+    "Te amo", "Mi amor", "Amor de mi vida", "Eres preciosa", "Me encantas",
+    "Siempre juntos", "Te adoro", "Eres mi sol", "Eres única", "Mi todo", "My love"
+  ],
+
+  // Cuántos ramos flotan en la galaxia
+  cantidadRamos: 26,
+
+  // Carta grande (ramo del centro y corazón)
+  cartaPrincipal: {
+    titulo: "Mi amor",
+    texto: "Cada flor de este cielo amarillo es una razón por la que te quiero. Gracias por llenar mis días de luz, de risas y de ti. Eres lo más bonito que tengo.",
+    cierre: "Te amo mucho",
+    para: "Para ti"
+  },
+
+  // Cartitas cortas (se reparten entre los demás ramos)
+  cartitas: [
+    { titulo: "Te amo",         texto: "Eres lo mejor que me ha pasado.",                        cierre: "Te amo",         para: "Para ti" },
+    { titulo: "Mi Melo",         texto: "Contigo hasta los días grises se vuelven amarillos.",   cierre: "Te quiero",      para: "Para ti" },
+    { titulo: "Mi amor",        texto: "Me encanta despertar pensando en ti.",                   cierre: "Te amo",         para: "Para ti" },
+    { titulo: "Eres preciosa",  texto: "Por dentro y por fuera, en cada momento.",               cierre: "Te adoro",       para: "Para ti" },
+    { titulo: "Siempre juntos", texto: "Quiero mil aventuras más a tu lado.",                    cierre: "Te amo",         para: "Para ti" },
+    { titulo: "Gracias",        texto: "Por tu risa, tu paciencia y tu cariño.",                 cierre: "Te quiero",      para: "Para ti" },
+    { titulo: "Mi todo",        texto: "Contigo, cualquier lugar es mi lugar favorito.",         cierre: "Te amo",         para: "Para ti" },
+    { titulo: "Te adoro",       texto: "Cada día te quiero un poquito más que ayer.",            cierre: "Te amo mucho",   para: "Para ti" }
+  ]
+};
+/* ========================================================== */
+
+
+(() => {
+  "use strict";
+
+  const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = id => document.getElementById(id);
+  const cv = $("c"), ctx = cv.getContext("2d");
+  const pequena = Math.min(innerWidth, innerHeight) < 600;
+
+  /* ---------- utilidades ---------- */
+  let seed = 20260921;
+  const rand = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const gauss = () => (rand() + rand() + rand() + rand() - 2) * 0.8;
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  /* ---------- sprites de flores grandes (ramos) ---------- */
+  function hoja(g, x, y, len, ang, col = "#3f8a2b") {
+    g.save(); g.translate(x, y); g.rotate(ang); g.fillStyle = col;
+    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * .4, -len * .28, len, 0); g.quadraticCurveTo(len * .4, len * .28, 0, 0); g.fill(); g.restore();
+  }
+  function florPetalos(g, cx, cy, r, n, c1, c2, k1, k2) {
+    for (let capa = 0; capa < 2; capa++) {
+      const rr = r * (capa ? .82 : 1), off = capa ? Math.PI / n : 0;
+      for (let i = 0; i < n; i++) {
+        g.save(); g.translate(cx, cy); g.rotate(off + i * 2 * Math.PI / n);
+        const gr = g.createLinearGradient(0, 0, 0, -rr); gr.addColorStop(0, c2); gr.addColorStop(1, c1);
+        g.fillStyle = gr; g.beginPath(); g.ellipse(0, -rr * .62, rr * .17, rr * .42, 0, 0, 7); g.fill(); g.restore();
+      }
+    }
+    const cg = g.createRadialGradient(cx, cy, 0, cx, cy, r * .5); cg.addColorStop(0, k1); cg.addColorStop(1, k2);
+    g.fillStyle = cg; g.beginPath(); g.arc(cx, cy, r * .48, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,200,90,.32)";
+    for (let i = 0; i < 14; i++) { const a = i * 2.4, d = r * .36 * Math.sqrt(i / 14); g.beginPath(); g.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, r * .03, 0, 7); g.fill(); }
+  }
+  const girasol = (g, x, y, r) => florPetalos(g, x, y, r, 16, "#ffd400", "#f59a00", "#6b3d10", "#2b1607");
+  function rosa(g, x, y, r) {
+    const gr = g.createRadialGradient(x - r * .2, y - r * .2, 0, x, y, r); gr.addColorStop(0, "#ffee9a"); gr.addColorStop(1, "#f0a800");
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.strokeStyle = "rgba(150,90,0,.55)"; g.lineWidth = r * .07; g.beginPath();
+    for (let a = 0; a < 12; a += .2) { const d = r * .12 + (a / 12) * r * .8; g.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d); }
+    g.stroke();
+  }
+  function tulipan(g, x, y, s, rot) {
+    g.save(); g.translate(x, y); g.rotate(rot);
+    g.strokeStyle = "#3f8a2b"; g.lineWidth = s * .12; g.beginPath(); g.moveTo(0, s * .5); g.lineTo(0, s * 1.7); g.stroke();
+    const gr = g.createLinearGradient(0, -s, 0, s * .5); gr.addColorStop(0, "#ffe650"); gr.addColorStop(1, "#f5a800");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(-s * .55, -s * .35);
+    g.quadraticCurveTo(-s * .6, s * .5, 0, s * .55); g.quadraticCurveTo(s * .6, s * .5, s * .55, -s * .35);
+    g.lineTo(s * .28, -s * .1); g.lineTo(0, -s * .8); g.lineTo(-s * .28, -s * .1); g.closePath(); g.fill();
+    g.strokeStyle = "rgba(170,100,0,.35)"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -s * .8); g.lineTo(0, s * .45); g.stroke();
+    g.restore();
+  }
+  function cono(g, cx, top, w, h, c1, c2) {
+    const gr = g.createLinearGradient(cx - w / 2, top, cx + w / 2, top + h); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+    g.fillStyle = gr; g.beginPath(); g.moveTo(cx - w / 2, top); g.lineTo(cx + w / 2, top); g.lineTo(cx + w * .06, top + h); g.lineTo(cx - w * .06, top + h); g.closePath(); g.fill();
+    g.fillStyle = "rgba(255,255,255,.2)"; g.beginPath(); g.moveTo(cx - w * .1, top); g.lineTo(cx + w / 2, top); g.lineTo(cx + w * .06, top + h); g.closePath(); g.fill();
+  }
+  function mono(g, cx, cy, s, col) {
+    g.fillStyle = col;
+    for (const d of [-1, 1]) { g.save(); g.translate(cx, cy); g.rotate(d * .35); g.beginPath(); g.ellipse(d * s * .42, 0, s * .42, s * .24, 0, 0, 7); g.fill(); g.restore(); }
+    g.beginPath(); g.arc(cx, cy, s * .16, 0, 7); g.fill();
+  }
+
+  function crearSprite(tipo) {
+    const c = document.createElement("canvas"); c.width = 240; c.height = 280; const g = c.getContext("2d");
+    if (tipo === 0) {            // ramo de 3 girasoles
+      hoja(g, 120, 150, 100, -2.55); hoja(g, 120, 150, 100, -.6); hoja(g, 120, 150, 85, -1.57);
+      cono(g, 120, 140, 150, 130, "#ecd7ab", "#b98f52");
+      girasol(g, 152, 52, 30); girasol(g, 70, 112, 38); girasol(g, 170, 112, 38); girasol(g, 120, 84, 50);
+      mono(g, 120, 168, 34, "#ff8fb1");
+    } else if (tipo === 1) {     // ramo de tulipanes
+      tulipan(g, 70, 78, 34, -.35); tulipan(g, 170, 78, 34, .35); tulipan(g, 95, 60, 38, -.12); tulipan(g, 145, 60, 38, .12); tulipan(g, 120, 82, 42, 0);
+      cono(g, 120, 138, 140, 132, "#8fd07a", "#3f8a2b");
+      mono(g, 120, 166, 32, "#ff9ec0");
+    } else if (tipo === 2) {     // un girasol con tallo
+      g.strokeStyle = "#3f8a2b"; g.lineWidth = 9; g.beginPath(); g.moveTo(120, 130); g.quadraticCurveTo(128, 200, 118, 270); g.stroke();
+      hoja(g, 122, 210, 70, -.5); hoja(g, 122, 235, 64, -2.65);
+      girasol(g, 120, 96, 66);
+    } else {                     // ramo de rosas amarillas
+      hoja(g, 120, 150, 95, -2.5); hoja(g, 120, 150, 95, -.65);
+      cono(g, 120, 140, 145, 130, "#f6e3b4", "#c9a15c");
+      rosa(g, 74, 108, 30); rosa(g, 166, 108, 30); rosa(g, 96, 66, 34); rosa(g, 146, 66, 34); rosa(g, 120, 100, 40);
+      mono(g, 120, 168, 34, "#ffd23a");
+    }
+    return c;
+  }
+  const sprites = [0, 1, 2, 3].map(crearSprite);
+
+  /* ---------- florecitas amarillas (las "partículas" de la galaxia) ----------
+     24 variantes: 3 formas x 4 tonos de amarillo x 2 giros */
+  const TONOS = [
+    ["#fff7b8", "#ffe757", "#ff9d00"],   // amarillo pálido
+    ["#ffe95a", "#ffc800", "#e07800"],   // amarillo
+    ["#ffd21f", "#f5a300", "#c85f00"],   // dorado
+    ["#fff19f", "#ffd83a", "#ff8a00"]    // mantequilla
+  ];
+  function crearFlorMini(n, tono, giro) {
+    const c = document.createElement("canvas"); c.width = c.height = 48; const g = c.getContext("2d");
+    g.translate(24, 24); g.rotate(giro ? Math.PI / n : 0);
+    const ancho = n > 6 ? 4.2 : 6.6, largo = n > 6 ? 10.5 : 10;
+    for (let i = 0; i < n; i++) {
+      g.save(); g.rotate(i * 2 * Math.PI / n);
+      const gr = g.createLinearGradient(0, 0, 0, -21); gr.addColorStop(0, tono[1]); gr.addColorStop(1, tono[0]);
+      g.fillStyle = gr; g.beginPath(); g.ellipse(0, -12, ancho, largo, 0, 0, 7); g.fill(); g.restore();
+    }
+    const cg = g.createRadialGradient(0, 0, 0, 0, 0, 6.5); cg.addColorStop(0, tono[2]); cg.addColorStop(1, tono[1]);
+    g.fillStyle = cg; g.beginPath(); g.arc(0, 0, 6.5, 0, 7); g.fill();
+    return c;
+  }
+  const flores = [];
+  for (const n of [5, 6, 8]) for (const t of TONOS) for (const giro of [0, 1]) flores.push(crearFlorMini(n, t, giro));
+  const NF = flores.length;
+
+  /* ---------- galaxia en 3D hecha de flores ----------
+     núcleo esférico + disco espiral con grosor y alabeo + halo suelto */
+  const R = 10;
+  const NG = pequena ? 1500 : 2600;
+  const grho = new Float32Array(NG), gth = new Float32Array(NG), gy = new Float32Array(NG);
+  const gsz = new Float32Array(NG), gal = new Float32Array(NG), gph = new Float32Array(NG), gv = new Uint8Array(NG);
+  for (let i = 0; i < NG; i++) {
+    const u = rand(); let rho, th, y, sz, al;
+    if (u < .22) {                                   // núcleo (esfera)
+      const rr = Math.pow(rand(), .7) * 2.8, phi = rand() * 6.283, ct = rand() * 2 - 1, st = Math.sqrt(1 - ct * ct);
+      rho = rr * st; th = phi; y = rr * ct * .85; sz = .3 + rand() * .22; al = .6;
+    } else if (u < .88) {                            // disco con brazos
+      rho = R * Math.pow(rand(), 1.35); th = (i % 3) * 2.094 + rho * .5 + gauss() * (.2 + .5 * rho / R);
+      y = gauss() * .34 * (1.15 - rho / R * .8) + Math.sin(th * 2) * .28 * (rho / R);
+      sz = .36 + rand() * .3; al = .92 - .38 * (rho / R);
+    } else {                                         // halo
+      const rr = R * (.3 + rand() * .85), phi = rand() * 6.283, ct = rand() * 2 - 1, st = Math.sqrt(1 - ct * ct);
+      rho = rr * st; th = phi; y = rr * ct * .7; sz = .3 + rand() * .24; al = .42;
+    }
+    grho[i] = rho; gth[i] = th; gy[i] = y; gsz[i] = sz; gal[i] = al; gph[i] = rand() * 6.283; gv[i] = Math.floor(rand() * NF);
+  }
+
+  /* ---------- corazón hecho de florecitas ---------- */
+  const HN = pequena ? 200 : 300, hx = new Float32Array(HN), hy = new Float32Array(HN), hp = new Float32Array(HN), hv = new Uint8Array(HN), hk = new Float32Array(HN);
+  for (let i = 0; i < HN; i++) {
+    const t = (i / HN) * 6.283 + rand() * .03;
+    hx[i] = 16 * Math.pow(Math.sin(t), 3) / 17 + gauss() * .012;
+    hy[i] = (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17 + gauss() * .012;
+    hp[i] = rand() * 6.283; hv[i] = Math.floor(rand() * NF); hk[i] = .7 + rand() * .6;
+  }
+
+  /* ---------- ramos repartidos en el volumen ---------- */
+  const items = [];
+  const nRamos = Math.round(CONFIG.cantidadRamos * (pequena ? .75 : 1));
+  for (let i = 0; i < nRamos; i++) {
+    const r = 3.2 + rand() * 6.2;
+    items.push({
+      tipo: "ramo", sprite: Math.floor(rand() * 4), r, th: rand() * 6.283, y0: -1.9 + rand() * 4.7,
+      size: 1.3 + rand() * 1.3, om: .5 / (1.5 + r), ph: rand() * 6.283, delay: i * .11 + rand() * .4,
+      frase: CONFIG.frases[i % CONFIG.frases.length], carta: CONFIG.cartitas[i % CONFIG.cartitas.length]
+    });
+  }
+  const principal = { tipo: "principal", sprite: 0, r: 0, th: 0, y0: 3.7, size: 2.7, om: 0, ph: 0, delay: 1.9, frase: "Te amo", carta: CONFIG.cartaPrincipal };
+  items.push(principal);
+  const corazon = { tipo: "corazon", y0: 3.7, size: 7.2, delay: 2.3 };
+
+  /* ---------- florecitas que caen por delante (2D) ---------- */
+  const motas = Array.from({ length: 60 }, () => ({
+    x: rand(), y: rand(), vy: .012 + rand() * .035, s: 6 + rand() * 18, ph: rand() * 6.283, v: Math.floor(rand() * NF)
+  }));
+
+  /* ---------- cámara y estado ---------- */
+  let W, H, DPR, focal, cxs, cys;
+  function redimensionar() {
+    DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR; focal = Math.min(W, H) * 1.15; cxs = W / 2; cys = H * .55;
+  }
+  addEventListener("resize", redimensionar); redimensionar();
+
+  let empezado = false, t0 = 0, orbT = 0, yaAbrio = false;
+  let dragYaw = 0, autoYaw = 0, dragPitch = 0, userZoom = 1;
+  let pitch = .05, D = 56, cosY = 1, sinY = 0, cosP = 1, sinP = 0;
+  const P = { x: 0, y: 0, f: 1, d: 1 };
+  function proyectar(x, y, z) {
+    const x1 = x * cosY - z * sinY, z1 = x * sinY + z * cosY;
+    const d = Math.max(1, D + z1 * cosP - y * sinP), f = focal / d;
+    P.x = cxs + x1 * f; P.y = cys - (y * cosP + z1 * sinP) * f; P.f = f; P.d = d;
+  }
+
+  let golpes = [];
+  let ultimo = performance.now();
+  const pista = $("pista");
+
+  function cuadro(now) {
+    const dt = Math.min(.05, (now - ultimo) / 1000); ultimo = now;
+    const tt = empezado ? (reducido ? 99 : (now - t0) / 1000) : -1;
+    orbT += dt * (empezado ? 1 : .3) * (reducido ? .3 : 1);
+    if (!ptrs.size && !reducido) autoYaw += dt * .018;
+
+    /* cámara: la introducción la lleva de canto y lejos a inclinada y cerca; luego la controla ella */
+    const pIntro = empezado ? lerp(.05, .98, ease(clamp((tt - .4) / 5.6))) : .05;
+    pitch = clamp(pIntro + (empezado ? dragPitch : 0), .05, 1.5);
+    D = (empezado ? lerp(56, W < H ? 21 : 24, ease(clamp((tt - .2) / 6.2))) : 56) / userZoom;
+    const gFade = empezado ? .35 + .65 * clamp(tt / 2.5) : .35;
+    const yaw = dragYaw + autoYaw;
+    cosY = Math.cos(yaw); sinY = Math.sin(yaw); cosP = Math.cos(pitch); sinP = Math.sin(pitch);
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+
+    /* niebla amarilla de fondo */
+    proyectar(0, 0, 0);
+    const cx0 = P.x, cy0 = P.y, f0 = P.f;
+    let g = ctx.createRadialGradient(cx0 + W * .12, cy0 - H * .18, 0, cx0 + W * .12, cy0 - H * .18, Math.max(W, H) * .6);
+    g.addColorStop(0, `rgba(150,130,0,${.3 * gFade})`); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    /* resplandor del centro (redondo, como una esfera de luz, más aplastado cuando el disco se ve de canto) */
+    const rad = R * .95 * f0;
+    ctx.save(); ctx.translate(cx0, cy0); ctx.scale(1, .45 + .55 * Math.sin(pitch));
+    g = ctx.createRadialGradient(0, 0, 0, 0, 0, rad);
+    g.addColorStop(0, `rgba(255,243,150,${.5 * gFade})`); g.addColorStop(.22, `rgba(235,205,45,${.22 * gFade})`); g.addColorStop(1, "rgba(150,120,0,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rad, 0, 7); ctx.fill();
+    ctx.restore();
+
+    /* flores de la galaxia (brillan al sumarse, y las lejanas se ven más tenues) */
+    ctx.globalCompositeOperation = "lighter";
+    const dCerca = D - R * .9, dRango = R * 1.9;
+    for (let i = 0; i < NG; i++) {
+      const rho = grho[i], a = gth[i] + orbT * (.6 / (1.5 + rho)), y = gy[i];
+      const x = rho * Math.cos(a), z = rho * Math.sin(a);
+      const x1 = x * cosY - z * sinY, z1 = x * sinY + z * cosY;
+      const d = Math.max(1, D + z1 * cosP - y * sinP), f = focal / d;
+      let s = gsz[i] * f; if (s < 4) s = 4;
+      const lejos = clamp((d - dCerca) / dRango);
+      ctx.globalAlpha = gFade * gal[i] * (1 - .6 * lejos) * (.8 + .2 * Math.sin(orbT * 2 + gph[i]));
+      ctx.drawImage(flores[gv[i]], cxs + x1 * f - s / 2, cys - (y * cosP + z1 * sinP) * f - s / 2, s, s);
+    }
+    /* núcleo brillante */
+    ctx.globalAlpha = 1;
+    ctx.save(); ctx.translate(cx0, cy0); ctx.scale(1, .45 + .55 * Math.sin(pitch));
+    g = ctx.createRadialGradient(0, 0, 0, 0, 0, f0 * 1.9);
+    g.addColorStop(0, `rgba(255,255,235,${.85 * gFade})`); g.addColorStop(.4, `rgba(255,235,120,${.4 * gFade})`); g.addColorStop(1, "rgba(255,220,60,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, f0 * 1.9, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
+
+    /* ramos y corazón, del más lejano al más cercano */
+    const lista = [];
+    for (const it of items) {
+      const a = it.th + orbT * it.om;
+      const x = it.r * Math.cos(a), z = it.r * Math.sin(a), y = it.y0 + Math.sin(orbT * 1.1 + it.ph) * .14;
+      proyectar(x, y, z);
+      const alfa = empezado ? ease(clamp((tt - 3 - it.delay) / 1.2)) : 0;
+      if (alfa > 0) lista.push({ it, sx: P.x, sy: P.y, f: P.f, d: P.d, alfa });
+    }
+    if (empezado) {
+      const ah = ease(clamp((tt - 3 - corazon.delay) / 1.5));
+      if (ah > 0) { proyectar(0, corazon.y0, 0); lista.push({ it: corazon, sx: P.x, sy: P.y, f: P.f, d: P.d + .05, alfa: ah }); }
+    }
+    lista.sort((a, b) => b.d - a.d);
+    golpes = [];
+
+    for (const o of lista) {
+      const it = o.it;
+      if (it.tipo === "corazon") {
+        const tam = it.size * o.f * (1 + .025 * Math.sin(orbT * 2)) / 2;
+        const s = clamp(o.f * .21, 6, 20);
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < HN; i++) {
+          ctx.globalAlpha = o.alfa * (.45 + .55 * (.5 + .5 * Math.sin(orbT * 3 + hp[i])));
+          const q = s * hk[i];
+          ctx.drawImage(flores[hv[i]], o.sx + hx[i] * tam - q / 2, o.sy - hy[i] * tam - q / 2, q, q);
+        }
+        ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+        golpes.push({ it: principal, sx: o.sx, sy: o.sy, hw: tam * .8, hh: tam * .8, d: o.d, alfa: o.alfa });
+        continue;
+      }
+      const esc = .3 + .7 * o.alfa, w = it.size * o.f * esc, h = w * 280 / 240;
+      const sombra = it.tipo === "principal" ? 1 : 1 - .45 * clamp((o.d - dCerca) / dRango);
+      ctx.globalAlpha = o.alfa * sombra;
+      ctx.drawImage(sprites[it.sprite], o.sx - w / 2, o.sy - h / 2, w, h);
+      const px = clamp(w * .17, 8, 24);
+      if (px >= 8) {
+        ctx.font = it.tipo === "principal" ? `700 ${px * 1.35}px "Dancing Script", cursive` : `700 ${px}px Quicksand, system-ui, sans-serif`;
+        ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+        ctx.shadowColor = "rgba(255,215,60,.9)"; ctx.shadowBlur = 8;
+        ctx.fillText(it.frase + " 💛", o.sx, o.sy + h / 2 + px * .9);
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+      golpes.push({ it, sx: o.sx, sy: o.sy, hw: Math.max(w * .5, 24), hh: Math.max(h * .55, 28), d: o.d, alfa: o.alfa });
+    }
+
+    /* florecitas que caen por delante de todo */
+    ctx.globalCompositeOperation = "lighter";
+    for (const m of motas) {
+      m.y += m.vy * dt * (reducido ? .3 : 1); if (m.y > 1.05) { m.y = -.05; m.x = rand(); }
+      const x = (m.x + Math.sin(orbT * .5 + m.ph) * .015) * W, y = m.y * H;
+      ctx.globalAlpha = .8 * (.55 + .45 * Math.sin(orbT * 2 + m.ph));
+      ctx.drawImage(flores[m.v], x - m.s / 2, y - m.s / 2, m.s, m.s);
+    }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+
+    if (empezado && tt > 7.5 && !yaAbrio) pista.classList.add("visible");
+    requestAnimationFrame(cuadro);
+  }
+
+  /* ---------- interacción: tocar, girar (arrastrar) y acercar (pellizcar / rueda) ---------- */
+  const ptrs = new Map();
+  let inicio = null, maxMov = 0, dist0 = 1, zoom0 = 1;
+  const distPtrs = () => { const a = [...ptrs.values()]; return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
+
+  function elegir(x, y) {
+    for (let i = golpes.length - 1; i >= 0; i--) {      // del más cercano al más lejano
+      const q = golpes[i];
+      if (q.alfa > .6 && Math.abs(x - q.sx) < q.hw && Math.abs(y - q.sy) < q.hh) return q;
+    }
+    return null;
+  }
+  cv.addEventListener("pointerdown", e => {
+    if (!empezado) return;
+    cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 1) { inicio = { x: e.clientX, y: e.clientY }; maxMov = 0; }
+    else if (ptrs.size === 2) { dist0 = distPtrs() || 1; zoom0 = userZoom; maxMov = 99; }
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = ptrs.get(e.pointerId);
+    if (p) {
+      const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+      if (ptrs.size === 2) userZoom = clamp(zoom0 * distPtrs() / dist0, .65, 1.7);
+      else if (inicio) {
+        dragYaw += dx * .006; dragPitch = clamp(dragPitch + dy * .005, -1, .5);
+        maxMov = Math.max(maxMov, Math.hypot(e.clientX - inicio.x, e.clientY - inicio.y));
+      }
+    } else cv.style.cursor = empezado && elegir(e.clientX, e.clientY) ? "pointer" : "default";
+  });
+  const soltar = e => {
+    const estaba = ptrs.delete(e.pointerId);
+    if (estaba && ptrs.size === 0 && maxMov < 8) { const q = elegir(e.clientX, e.clientY); if (q) abrirCarta(q.it); }
+  };
+  cv.addEventListener("pointerup", soltar);
+  cv.addEventListener("pointercancel", e => ptrs.delete(e.pointerId));
+  cv.addEventListener("wheel", e => { e.preventDefault(); userZoom = clamp(userZoom * Math.exp(-e.deltaY * .001), .65, 1.7); }, { passive: false });
+
+  /* ---------- cartita ---------- */
+  const carta = $("carta"), cerrar = $("cCerrar"), arte = $("cArte").getContext("2d");
+  function abrirCarta(it) {
+    const d = it.carta;
+    $("cTitulo").textContent = d.titulo; $("cTexto").textContent = d.texto;
+    $("cCierre").textContent = d.cierre; $("cPara").textContent = d.para || "Para ti";
+    arte.clearRect(0, 0, 240, 280); arte.drawImage(sprites[it.sprite], 0, 0);
+    carta.classList.add("abierta"); cerrar.focus({ preventScroll: true });
+    yaAbrio = true; pista.classList.remove("visible");
+  }
+  const cerrarCarta = () => carta.classList.remove("abierta");
+  cerrar.addEventListener("click", cerrarCarta);
+  carta.addEventListener("pointerdown", e => { if (e.target === carta) cerrarCarta(); });
+  addEventListener("keydown", e => { if (e.key === "Escape") cerrarCarta(); });
+
+  /* ---------- música ---------- */
+  const btnM = $("musica");
+  let audio = null, sonando = false, reanudar = false, fadeId = 0;
+  const volObjetivo = clamp(CONFIG.musicaVolumen ?? .7);
+  function pintarBoton() { btnM.classList.toggle("sonando", sonando); btnM.setAttribute("aria-pressed", String(sonando)); }
+  function fundir(hasta, ms, alTerminar) {
+    clearInterval(fadeId); if (!audio) return;
+    const desde = audio.volume, pasos = Math.max(1, ms / 50); let n = 0;
+    fadeId = setInterval(() => {
+      n++; audio.volume = clamp(lerp(desde, hasta, n / pasos));
+      if (n >= pasos) { clearInterval(fadeId); if (alTerminar) alTerminar(); }
+    }, 50);
+  }
+  function reproducir() {
+    if (!audio) return;
+    audio.volume = 0;
+    audio.play().then(() => { sonando = true; pintarBoton(); fundir(volObjetivo, 1800); })
+      .catch(() => { sonando = false; pintarBoton(); });
+  }
+  function pausar() { if (!audio) return; sonando = false; pintarBoton(); fundir(0, 600, () => audio.pause()); }
+  if (CONFIG.musica) {
+    audio = new Audio(CONFIG.musica); audio.loop = true; audio.preload = "auto";
+    audio.addEventListener("error", () => { audio = null; btnM.hidden = true; });   // si el archivo no existe, se oculta el botón
+    btnM.hidden = false; pintarBoton();
+    btnM.addEventListener("click", () => sonando ? pausar() : reproducir());
+    document.addEventListener("visibilitychange", () => {                            // pausa sola si cambia de pestaña
+      if (document.hidden && sonando) { reanudar = true; clearInterval(fadeId); audio.pause(); sonando = false; pintarBoton(); }
+      else if (!document.hidden && reanudar) { reanudar = false; reproducir(); }
+    });
+  }
+
+  /* ---------- pantalla de inicio ---------- */
+  const pantalla = $("inicio");
+  $("inicioTitulo").textContent = CONFIG.inicioTitulo;
+  $("inicioTexto").textContent = CONFIG.inicioTexto;
+  pista.textContent = CONFIG.pista;
+  function comenzar() {
+    if (empezado) return;
+    empezado = true; t0 = performance.now(); pantalla.classList.add("oculto");
+    btnM.classList.add("visible"); reproducir();
+  }
+  pantalla.addEventListener("click", comenzar);
+  pantalla.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); comenzar(); } });
+
+  requestAnimationFrame(cuadro);
+})();
+</script>
+</body>
+</html>
